@@ -13,7 +13,7 @@ namespace MassTransit.EntityFrameworkCore3Integration.Tests
             var dbContextOptionsBuilder =
                 new DbContextOptionsBuilder<SagaWithDependencyContext>();
 
-            SqlServerDbContextOptionsExtensions.UseSqlServer((DbContextOptionsBuilder)dbContextOptionsBuilder, LocalDbConnectionStringProvider.GetLocalDbConnectionString(),
+            dbContextOptionsBuilder.UseSqlServer(LocalDbConnectionStringProvider.GetLocalDbConnectionString(),
                 m =>
                 {
                     var executingAssembly = typeof(ContextFactory).GetTypeInfo().Assembly;

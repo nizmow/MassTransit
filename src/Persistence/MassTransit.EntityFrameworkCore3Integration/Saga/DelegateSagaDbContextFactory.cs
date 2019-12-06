@@ -23,18 +23,18 @@ namespace MassTransit.EntityFrameworkCore3Integration.Saga
 
         public DelegateSagaDbContextFactory(Func<DbContext> dbContextFactory)
         {
-            this._dbContextFactory = dbContextFactory;
+            _dbContextFactory = dbContextFactory;
         }
 
         public DbContext Create()
         {
-            return this._dbContextFactory();
+            return _dbContextFactory();
         }
 
         public DbContext CreateScoped<T>(ConsumeContext<T> context)
             where T : class
         {
-            return this._dbContextFactory();
+            return _dbContextFactory();
         }
 
         public void Release(DbContext dbContext)

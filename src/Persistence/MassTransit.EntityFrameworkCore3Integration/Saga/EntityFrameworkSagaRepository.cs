@@ -27,9 +27,9 @@
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
             IRawSqlLockStatements rawSqlLockStatements = null)
         {
-            this._sagaDbContextFactory = sagaDbContextFactory;
-            this._isolationLevel = isolationLevel;
-            this._rawSqlLockStatements = rawSqlLockStatements;
+            _sagaDbContextFactory = sagaDbContextFactory;
+            _isolationLevel = isolationLevel;
+            _rawSqlLockStatements = rawSqlLockStatements;
         }
 
         public static EntityFrameworkSagaRepository<TSaga> CreateOptimistic(ISagaDbContextFactory sagaDbContextFactory)
@@ -57,7 +57,7 @@
 
         async Task<IEnumerable<Guid>> IQuerySagaRepository<TSaga>.Find(ISagaQuery<TSaga> query)
         {
-            using (var dbContext = this._sagaDbContextFactory.Create())
+            using (var dbContext = _sagaDbContextFactory.Create())
             {
                 return await dbContext.Set<TSaga>()
                     .Where(query.FilterExpression)
@@ -69,7 +69,7 @@
         void IProbeSite.Probe(ProbeContext context)
         {
             var scope = context.CreateScope("sagaRepository");
-            var dbContext = this._sagaDbContextFactory.Create();
+            var dbContext = _sagaDbContextFactory.Create();
             try
             {
                 scope.Set(new
@@ -80,7 +80,7 @@
             }
             finally
             {
-                this._sagaDbContextFactory.Release(dbContext);
+                _sagaDbContextFactory.Release(dbContext);
             }
         }
 
@@ -90,7 +90,7 @@
             if (!context.CorrelationId.HasValue)
                 throw new SagaException("The CorrelationId was not specified", typeof(TSaga), typeof(T));
 
-            var dbContext = this._sagaDbContextFactory.CreateScoped(context);
+            var dbContext = _sagaDbContextFactory.CreateScoped(context);
             try
             {
                 var execStrategy = dbContext.Database.CreateExecutionStrategy();
@@ -99,23 +99,23 @@
                     await execStrategy.Execute(async () =>
                     {
                         using (var transaction =
-                            await dbContext.Database.BeginTransactionAsync(this._isolationLevel, context.CancellationToken).ConfigureAwait(false))
+                            await dbContext.Database.BeginTransactionAsync(_isolationLevel, context.CancellationToken).ConfigureAwait(false))
                         {
-                            await this.SendLogic(transaction, dbContext, context, policy, next).ConfigureAwait(false);
+                            await SendLogic(transaction, dbContext, context, policy, next).ConfigureAwait(false);
                         }
                     });
                 }
                 else
                 {
-                    using (var transaction = await dbContext.Database.BeginTransactionAsync(this._isolationLevel, context.CancellationToken).ConfigureAwait(false))
+                    using (var transaction = await dbContext.Database.BeginTransactionAsync(_isolationLevel, context.CancellationToken).ConfigureAwait(false))
                     {
-                        await this.SendLogic(transaction, dbContext, context, policy, next).ConfigureAwait(false);
+                        await SendLogic(transaction, dbContext, context, policy, next).ConfigureAwait(false);
                     }
                 }
             }
             finally
             {
-                this._sagaDbContextFactory.Release(dbContext);
+                _sagaDbContextFactory.Release(dbContext);
             }
         }
 
@@ -127,7 +127,7 @@
 
             if (policy.PreInsertInstance(context, out var instance))
             {
-                var inserted = await this.PreInsertSagaInstance(dbContext, context, instance).ConfigureAwait(false);
+                var inserted = await PreInsertSagaInstance(dbContext, context, instance).ConfigureAwait(false);
                 if (!inserted)
                     instance = null; // Reset this back to null if the insert failed. We will use the MissingPipe to create instead
             }
@@ -137,7 +137,7 @@
                 if (instance == null)
                 {
                     // Query with a row Lock instead using FromSql. Still a single trip to the DB (unlike EF6, which has to make one dummy call to row lock)
-                    var rowLockQuery = this._rawSqlLockStatements?.GetRowLockStatement<TSaga>(dbContext);
+                    var rowLockQuery = _rawSqlLockStatements?.GetRowLockStatement<TSaga>(dbContext);
                     if (rowLockQuery != null)
                         instance= await dbContext.Set<TSaga>().FromSqlRaw(rowLockQuery, new object[] {sagaId}).SingleOrDefaultAsync(context.CancellationToken)
                             .ConfigureAwait(false);
@@ -220,13 +220,13 @@
             IPipe<SagaConsumeContext<TSaga, T>> next)
             where T : class
         {
-            var dbContext = this._sagaDbContextFactory.CreateScoped(context);
+            var dbContext = _sagaDbContextFactory.CreateScoped(context);
             try
             {
                 List<Guid> nonTrackedInstances = null;
 
                 // Only perform this additional DB Call for pessimistic concurrency
-                if (this._rawSqlLockStatements != null)
+                if (_rawSqlLockStatements != null)
                 {
                     // We just get the correlation ids related to our Filter.
                     // We do this outside of the transaction to make sure we don't create a range lock.
@@ -244,23 +244,23 @@
                     await execStrategy.Execute(async () =>
                     {
                         using (var transaction =
-                            await dbContext.Database.BeginTransactionAsync(this._isolationLevel, context.CancellationToken).ConfigureAwait(false))
+                            await dbContext.Database.BeginTransactionAsync(_isolationLevel, context.CancellationToken).ConfigureAwait(false))
                         {
-                            await this.SendQueryLogic(nonTrackedInstances, transaction, dbContext, context, policy, next);
+                            await SendQueryLogic(nonTrackedInstances, transaction, dbContext, context, policy, next);
                         }
                     });
                 }
                 else
                 {
-                    using (var transaction = await dbContext.Database.BeginTransactionAsync(this._isolationLevel, context.CancellationToken).ConfigureAwait(false))
+                    using (var transaction = await dbContext.Database.BeginTransactionAsync(_isolationLevel, context.CancellationToken).ConfigureAwait(false))
                     {
-                        await this.SendQueryLogic(nonTrackedInstances, transaction, dbContext, context, policy, next);
+                        await SendQueryLogic(nonTrackedInstances, transaction, dbContext, context, policy, next);
                     }
                 }
             }
             finally
             {
-                this._sagaDbContextFactory.Release(dbContext);
+                _sagaDbContextFactory.Release(dbContext);
             }
         }
 
@@ -272,7 +272,7 @@
             try
             {
                 // Simple path for Optimistic Concurrency
-                if (this._rawSqlLockStatements == null)
+                if (_rawSqlLockStatements == null)
                 {
                     var instances = await dbContext.Set<TSaga>()
                         .Where(context.Query.FilterExpression)
@@ -285,14 +285,14 @@
                         await policy.Missing(context, missingSagaPipe).ConfigureAwait(false);
                     }
                     else
-                        await Task.WhenAll(instances.Select(instance => this.SendToInstance(context, dbContext, policy, instance, next))).ConfigureAwait(false);
+                        await Task.WhenAll(instances.Select(instance => SendToInstance(context, dbContext, policy, instance, next))).ConfigureAwait(false);
                 }
                 // Pessimistic Concurrency
                 else
                 {
                     // Hack for locking row for the duration of the transaction.
                     // We only lock one at a time, since we don't want an accidental range lock.
-                    var rowLockQuery = this._rawSqlLockStatements.GetRowLockStatement<TSaga>(dbContext);
+                    var rowLockQuery = _rawSqlLockStatements.GetRowLockStatement<TSaga>(dbContext);
 
                     var missingCorrelationIds = new List<Guid>();
                     if (nonTrackedInstances?.Any() == true)
@@ -308,7 +308,7 @@
                                 .ConfigureAwait(false);
 
                             if (instance != null)
-                                foundInstances.Add(this.SendToInstance(context, dbContext, policy, instance, next));
+                                foundInstances.Add(SendToInstance(context, dbContext, policy, instance, next));
                             else
                                 missingCorrelationIds.Add(nonTrackedInstance);
                         }
@@ -461,27 +461,27 @@
 
             public MissingPipe(DbContext dbContext, IPipe<SagaConsumeContext<TSaga, TMessage>> next)
             {
-                this._dbContext = dbContext;
-                this._next = next;
+                _dbContext = dbContext;
+                _next = next;
             }
 
             void IProbeSite.Probe(ProbeContext context)
             {
-                this._next.Probe(context);
+                _next.Probe(context);
             }
 
             public async Task Send(SagaConsumeContext<TSaga, TMessage> context)
             {
-                var proxy = new EntityFrameworkSagaConsumeContext<TSaga, TMessage>(this._dbContext, context, context.Saga, false);
+                var proxy = new EntityFrameworkSagaConsumeContext<TSaga, TMessage>(_dbContext, context, context.Saga, false);
 
                 proxy.LogAdded();
 
-                await this._next.Send(proxy).ConfigureAwait(false);
+                await _next.Send(proxy).ConfigureAwait(false);
 
                 if (!proxy.IsCompleted)
-                    this._dbContext.Set<TSaga>().Add(context.Saga);
+                    _dbContext.Set<TSaga>().Add(context.Saga);
 
-                await this._dbContext.SaveChangesAsync(context.CancellationToken).ConfigureAwait(false);
+                await _dbContext.SaveChangesAsync(context.CancellationToken).ConfigureAwait(false);
             }
         }
     }

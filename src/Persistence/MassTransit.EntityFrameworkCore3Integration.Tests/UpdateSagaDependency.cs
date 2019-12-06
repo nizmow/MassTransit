@@ -15,7 +15,7 @@
         public UpdateSagaDependency(Guid correlationId, string propertyValue)
             : base(correlationId)
         {
-            this.Name = propertyValue;
+            Name = propertyValue;
         }
 
         public string Name { get; set; }

@@ -29,8 +29,8 @@ namespace MassTransit.EntityFrameworkCore3Integration
             string rowLockStatement = DefaultRowLockStatement
             )
         {
-            this.DefaultSchema = defaultSchema;
-            this.RowLockStatement = rowLockStatement ?? throw new ArgumentNullException(nameof(rowLockStatement));
+            DefaultSchema = defaultSchema;
+            RowLockStatement = rowLockStatement ?? throw new ArgumentNullException(nameof(rowLockStatement));
         }
 
         protected string DefaultSchema { get; }
@@ -39,9 +39,9 @@ namespace MassTransit.EntityFrameworkCore3Integration
         public virtual string GetRowLockStatement<TSaga>(DbContext context)
             where TSaga : class, ISaga
         {
-            var schemaTablePair = this.GetSchemaAndTableName<TSaga>(context);
+            var schemaTablePair = GetSchemaAndTableName<TSaga>(context);
 
-            return string.Format(this.RowLockStatement, schemaTablePair.Schema, schemaTablePair.Table);
+            return string.Format(RowLockStatement, schemaTablePair.Schema, schemaTablePair.Table);
         }
 
         private SchemaTablePair GetSchemaAndTableName<T>(DbContext context)
@@ -55,7 +55,7 @@ namespace MassTransit.EntityFrameworkCore3Integration
 
                 result = new SchemaTablePair
                 {
-                    Schema = sql.GetSchema() ?? this.DefaultSchema,
+                    Schema = sql.GetSchema() ?? DefaultSchema,
                     Table = sql.GetTableName()
                 };
 

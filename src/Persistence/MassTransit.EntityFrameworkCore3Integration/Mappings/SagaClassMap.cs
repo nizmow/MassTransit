@@ -24,7 +24,7 @@ namespace MassTransit.EntityFrameworkCore3Integration.Mappings
             cfg.Property(t => t.CorrelationId)
                 .ValueGeneratedNever();
 
-            this.Configure(cfg, modelBuilder);
+            Configure(cfg, modelBuilder);
         }
 
         protected virtual void Configure(EntityTypeBuilder<TSaga> cfg, ModelBuilder modelBuilder)

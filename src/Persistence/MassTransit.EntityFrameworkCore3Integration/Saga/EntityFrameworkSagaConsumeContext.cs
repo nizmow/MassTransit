@@ -19,23 +19,23 @@
         public EntityFrameworkSagaConsumeContext(DbContext dbContext, ConsumeContext<TMessage> context, TSaga instance, bool existing = true)
             : base(context)
         {
-            this.Saga = instance;
-            this._dbContext = dbContext;
-            this._existing = existing;
+            Saga = instance;
+            _dbContext = dbContext;
+            _existing = existing;
         }
 
-        Guid? MessageContext.CorrelationId => this.Saga.CorrelationId;
+        Guid? MessageContext.CorrelationId => Saga.CorrelationId;
 
         public async Task SetCompleted()
         {
-            this.IsCompleted = true;
-            if (this._existing)
+            IsCompleted = true;
+            if (_existing)
             {
-                this._dbContext.Set<TSaga>().Remove(this.Saga);
+                _dbContext.Set<TSaga>().Remove(Saga);
 
                 this.LogRemoved();
 
-                await this._dbContext.SaveChangesAsync(this.CancellationToken).ConfigureAwait(false);
+                await _dbContext.SaveChangesAsync(CancellationToken).ConfigureAwait(false);
             }
         }
 

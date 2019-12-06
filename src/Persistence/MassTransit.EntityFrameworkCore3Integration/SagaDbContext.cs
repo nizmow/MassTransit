@@ -35,14 +35,14 @@ namespace MassTransit.EntityFrameworkCore3Integration
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            foreach (var configuration in this.Configurations)
+            foreach (var configuration in Configurations)
                 configuration.Configure(modelBuilder);
         }
 
         public override DbSet<TEntity> Set<TEntity>()
         {
         #if DEBUG
-            if (typeof(TEntity).HasInterface<ISaga>() && !this.ContainsSagaConfiguration<TEntity>())
+            if (typeof(TEntity).HasInterface<ISaga>() && !ContainsSagaConfiguration<TEntity>())
                 throw new ApplicationException($"Context should contains {TypeMetadataCache<TEntity>.ShortName} configuration");
         #endif
             return base.Set<TEntity>();
@@ -50,7 +50,7 @@ namespace MassTransit.EntityFrameworkCore3Integration
 
         bool ContainsSagaConfiguration<T>()
         {
-            return this.Configurations != null && this.Configurations.Any(x => x.SagaType == typeof(T));
+            return Configurations != null && Configurations.Any(x => x.SagaType == typeof(T));
         }
     }
 }
