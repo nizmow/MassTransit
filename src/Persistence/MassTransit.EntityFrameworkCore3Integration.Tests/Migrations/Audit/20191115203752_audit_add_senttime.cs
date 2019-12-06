@@ -1,8 +1,8 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
-
-namespace MassTransit.EntityFrameworkCore3Integration.Tests.Migrations.Audit
+﻿namespace MassTransit.EntityFrameworkCore3Integration.Tests.Migrations.Audit
 {
+    using System;
+    using Microsoft.EntityFrameworkCore.Migrations;
+
     public partial class audit_add_senttime : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -1,10 +1,10 @@
-﻿Testsusing System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore.Migrations;
-using Microsoft.EntityFrameworkCore.Metadata;
-
-namespace MassTransit.EntityFrameworkCore3Integration.Tests.Migrations.Audit
+﻿namespace MassTransit.EntityFrameworkCore3Integration.Tests.Migrations.Audit
 {
+    using System;
+    using Microsoft.EntityFrameworkCore.Migrations;
+    using Microsoft.EntityFrameworkCore.Metadata;
+
+
     public partial class audit_init : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
